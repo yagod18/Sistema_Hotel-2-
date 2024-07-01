@@ -1,0 +1,67 @@
+# depslib dependency file v1.0
+1719855109 source:c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+	"habitaciones.h"
+	"huespedes.h"
+	"reservas.h"
+
+1719446207 c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\registros.h
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+
+1719445858 source:c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\registros.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+	"registros.h"
+
+1719809771 source:c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\habitaciones.c
+	"habitaciones.h"
+	"huespedes.h"
+	"reservas.h"
+
+1719855301 source:c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\huespedes.c
+	"habitaciones.h"
+	"huespedes.h"
+	"reservas.h"
+
+1719855190 source:c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\reservas.c
+	"habitaciones.h"
+	"huespedes.h"
+	"reservas.h"
+
+1719802350 c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\habitaciones.h
+	<conio.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+	<time.h>
+	"colors.h"
+
+1719855085 c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\huespedes.h
+	<conio.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+	<time.h>
+	"colors.h"
+
+1719872356 c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\reservas.h
+	<conio.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+	<time.h>
+	"colors.h"
+
+1661205860 c:\users\yagom\desktop\facultad 2do año (primer cuatrimestre)\programacion 1\sistema_hotel\colors.h
+

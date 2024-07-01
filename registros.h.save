@@ -1,0 +1,73 @@
+#ifndef REGISTROS_H_INCLUDED
+#define REGISTROS_H_INCLUDED
+
+typedef struct Habitacion{
+    int numero; //Numero de la habitacion
+    char tipo[50]; //Tipo de habitacion (Simple, Doble, Suite)
+    float precio; //Precio por noche
+    int estado; //0 si esta desocupado, 1 si esta ocupado
+}THabitacion;
+
+typedef struct Huesped{
+    int id; //ID para identificar al huesped
+    int dni; //DNI del huesped
+    char nombre[100]; //Nombre y apellido del huesped
+    char direccion[100]; //Direccion del huesped
+    char telefono[20]; //Numero de telefono del huesped
+}THuesped;
+
+typedef struct Reserva{
+    int id_reserva; //ID para identificar la reserva
+    int id_cliente; //ID cliente para relacionar la reserva con un huesped
+    int dni_cliente; //DNI cliente para guardar el dato en la reserva
+    int num_habitacion; //Numero de habitacion para relacionar la reserva con una habitacio
+    char nombre_reserva[100]; //Nombre del huesped
+    int cantidad_noches; // Cantidad de noches que se quedara el huesped
+    float precio_por_noche; //Precio por noche de la habitacion
+    float precio_total; //Precio total de la estadia
+    int estado; // 0 si esta desocupado, 1 si esta ocupado
+}TReserva;
+
+THuesped NuevoHuesped();
+int VerificarID(int *id);
+int VerificarDNI(int *dni);
+int ObtenerDNI(int *id);
+int VerificarHuespedReserva(int *id);
+int VerificarTelefono(char *telefono);
+
+void GestionarHuesped();
+void CargarHuesped(THuesped huesped[],int *tam);
+void EliminarHuesped();
+void MostrarHuesped();
+void ModificarHuesped();
+
+
+THabitacion NuevaHabitacion();
+int VerificarNumHabitacion(int *num);
+
+void GestionarHabitaciones();
+void CargarHabitacion(THabitacion habitacion[],int *tam2);
+void EliminarHabitacion();
+void MostrarHabitacion();
+void ModificarHabitacion();
+void ActualizarEstadoHabitacion(int num, int estado);
+void ActualizarPrecioReservas(int *num_habitacion, float *nuevo_precio);
+
+TReserva NuevaReserva();
+int VerificarIDReserva(int *id);
+int VerificarEstado(int *num);
+int VerificarHabitacionesOcupadas();
+float ObtenerPrecioPorNoche(int *num_habitacion);
+char* ObtenerNombreHuesped(int *id);
+
+void GestionarReservas();
+void CargarReserva(TReserva reserva[], int *tam3);
+void CancelarReserva();
+void MostrarReservas();
+void MostrarHabitacionesDisponibles();
+void MostrarHabitacionesOcupadas();
+void ModificarReserva();
+void BuscarReservaPorDNI(int *dni);
+
+
+#endif // REGISTROS_H_INCLUDED

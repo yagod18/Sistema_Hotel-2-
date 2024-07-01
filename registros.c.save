@@ -1,0 +1,1202 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "registros.h"
+#define MAX_REGISTROS 100 //Cantidad maxima de registros
+
+//Funcion para crear un nuevo huesped
+THuesped NuevoHuesped(){
+    MostrarHuesped();
+    printf("\n------------ Cargando Nuevo Huesped -----------\n");
+    THuesped huesped;
+
+    int id_existe, dni_existe,tel_existe;
+
+    do {
+        printf("\nIngrese el ID del huesped: ");
+        fflush(stdin); scanf("%d", &huesped.id);
+        id_existe = VerificarID(&huesped.id);    //Se llama a la funcion VerificarID() para verificar que no se repita el ID ingresado
+        if (id_existe){
+            printf("\nEl ID ingresado ya existe. Ingrese otro ID.\n");
+        }else if(huesped.id <= 0){
+            printf("\nEl ID no puede ser 0 (cero) o menor. Intente nuevamente\n");
+        }
+
+    }while (id_existe || huesped.id <= 0);
+
+    do {
+        printf("\nIngrese el DNI del huesped: ");
+        fflush(stdin); scanf("%d", &huesped.dni);
+        dni_existe = VerificarDNI(&huesped.dni); //Se llama a la funcion VerificarDNI() para verificar que no se repita el DNI ingresado
+        if (dni_existe){
+            printf("\nEl DNI ingresado ya existe. Ingrese otro DNI.\n");
+        }else if(huesped.dni <= 0){
+            printf("\nIngrese un DNI valido\n");
+        }
+
+    }while (dni_existe || huesped.dni <= 0);
+
+    printf("\nIngrese el nombre y apellido del huesped: ");
+    fflush(stdin); gets(huesped.nombre);
+
+    printf("\nIngrese la direccion del huesped: ");
+    fflush(stdin); gets(huesped.direccion);
+
+    do {
+        printf("\nIngrese el numero de telefono del huesped: ");
+        fflush(stdin); gets(huesped.telefono);
+        tel_existe = VerificarTelefono(huesped.telefono); //Se llama a la funcion VerificarDNI() para verificar que no se repita el DNI ingresado
+        if (tel_existe){
+            printf("\nEl telefono ingresado ya existe. Ingrese otro telefono.\n");
+        }
+
+    }while (tel_existe);
+
+    return huesped;
+}
+
+//Funcion para verificar que no se repita el ID de los huespedes
+int VerificarID(int *id){
+    FILE *huespedes = fopen("Huespedes.dat", "rb");
+    THuesped huesped;
+    int id_existe = 0;
+    if (huespedes != NULL) {
+        while (fread(&huesped, sizeof(THuesped), 1, huespedes)) {
+            if (*id == huesped.id) {
+                id_existe = 1;
+                break;
+            }
+        }
+        fclose(huespedes);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Huespedes', intente nuevamente\n");
+    }
+    fclose(huespedes);
+    return id_existe;
+}
+
+//Funcion para verificar que no se repita el DNI de los huespedes
+int VerificarDNI(int *dni){
+    FILE *huespedes = fopen("Huespedes.dat", "rb");
+    THuesped huesped;
+    int dni_existe = 0;
+    if (huespedes != NULL) {
+        while (fread(&huesped, sizeof(THuesped), 1, huespedes)) {
+            if (*dni == huesped.dni) {
+                dni_existe = 1;
+                break;
+            }
+        }
+        fclose(huespedes);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Huespedes', intente nuevamente\n");
+    }
+    return dni_existe;
+}
+
+//Funcion para verificar que no se repitan los numeros telefonicos
+int VerificarTelefono(char *telefono){
+    FILE *huespedes = fopen("Huespedes.dat", "rb");
+    THuesped huesped;
+    int telefon_existe = 0;
+    if (huespedes != NULL) {
+        while (fread(&huesped, sizeof(THuesped), 1, huespedes)) {
+            if (strcmp(telefono,huesped.telefono) == 0) {
+                telefon_existe = 1;
+                break;
+            }
+        }
+        fclose(huespedes);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Huespedes', intente nuevamente\n");
+    }
+    return telefon_existe;
+}
+
+//Funcion para ver si un huesped tiene una reserva
+int VerificarHuespedReserva(int *id){
+    FILE *reservas = fopen("Reservas.dat", "rb");
+    TReserva reserva;
+    int verificar = 0;
+    if (reservas != NULL) {
+        while (fread(&reserva, sizeof(TReserva), 1, reservas)) {
+            if (*id == reserva.id_reserva && reserva.estado == 1) {
+                verificar = 1;
+                fclose(reservas);
+                break;
+            }
+        }fclose(reservas);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Reservas', intente nuevamente\n");
+    }
+    return verificar;
+}
+
+//Proceso para cargar un huesped en el archivo 'Huespedes.dat'
+void CargarHuesped(THuesped huesped[],int *tam){
+    FILE *huespedes = fopen("Huespedes.dat","ab");
+    if(huespedes != NULL){
+        huesped[*tam] = NuevoHuesped();
+        fwrite(&huesped[*tam],sizeof(THuesped), 1, huespedes);
+        (*tam)++;
+        printf("\nHuesped cargado correctamente\n");
+        fclose(huespedes);
+    }else{
+        printf("\nError al abrir el archivo 'Huespedes', intente nuevamente\n");
+    }
+}
+
+//Proceso para eliminar un huesped segun su ID
+void EliminarHuesped(){
+    FILE *huespedes = fopen("Huespedes.dat","rb");
+    FILE *temp = fopen("tempHuesped","wb");
+    THuesped huesped;
+
+    int id,id_encontrado = 0;
+    char op;
+
+    if(huespedes != NULL){
+        do{
+            fseek(huespedes, 0, SEEK_END); // Ir al final del archivo
+            if (ftell(huespedes) == 0) { // Si el archivo está vacío
+                printf("\nNo hay huespedes para eliminar.\n"); //Si no hay huespedes para eliminar se vuelve al menu anterior
+                fclose(huespedes);
+                fclose(temp);
+                remove("tempHuespedes");
+                return;
+            }
+            fseek(huespedes, 0, SEEK_SET);
+
+            MostrarHuesped();
+
+            printf("\nIngrese el ID del huesped que quiera eliminar: ");
+            fflush(stdin); scanf("%d",&id);
+            id_encontrado = VerificarID(&id);
+            if (!id_encontrado){
+                printf("\nID no encontrado, intente nuevamente\n");
+            }else if(VerificarHuespedReserva(&id)){                     //Se llama a la funcion VerificarHuespedReserva() para ver si el huesped actualmente tiene una reserva
+                printf("\nNo se puede eliminar un huesped con reserva, si desea hacerlo primero cancele la reserva\n");
+                fclose(huespedes);
+                fclose(temp);
+                remove("tempHuespedes.dat");
+                return;
+            }
+        }while (!id_encontrado && VerificarHuespedReserva(&id));
+
+        printf("\nSeguro que quiere eliminar al huesped de ID = %d? 'S' para confirmar 'N' para salir\n",id);
+        printf("\nIngrese una opcion: ");
+        fflush(stdin); scanf("%c",&op);
+        op = toupper(op);
+        if(op != 'S'){
+            fclose(huespedes);
+            fclose(temp);
+            remove("tempHuespedes.dat");
+            return;
+        }
+
+        while(fread(&huesped,sizeof(THuesped), 1, huespedes)){
+            if(id != huesped.id){
+                fwrite(&huesped, sizeof(THuesped), 1, temp);
+            }
+        }
+        system("cls");
+        printf("\nHuesped eliminado correctamente\n");
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+    fclose(huespedes);
+    fclose(temp);
+    remove("Huespedes.dat");
+    rename("tempHuesped","Huespedes.dat");
+}
+
+//Proceso para listar todos los huespedes
+void MostrarHuesped(){
+    FILE *huespedes = fopen("Huespedes.dat","rb");
+    THuesped huesped;
+    if(huespedes != NULL){
+        printf("\n\n--------------------------- Huespedes ---------------------------\n");
+        printf("\n ID  | Nombre           |    DNI    | Direccion            | Telefono    |\n");
+        printf("--------------------------------------------------------------------------\n");
+        while(fread(&huesped,sizeof(THuesped), 1, huespedes)){
+            printf(" %-3d | %-16s | %-9d | %-20s | %-11s |\n",huesped.id, huesped.nombre, huesped.dni, huesped.direccion, huesped.telefono);
+        }
+        fclose(huespedes);
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+    fclose(huespedes);
+}
+
+//Proceso para modificar los datos de un huesped segun su ID
+void ModificarHuesped(){
+    FILE *huespedes = fopen("Huespedes.dat","rb");
+    FILE *temp = fopen("tempHuesped","wb");
+    THuesped huesped;
+    int id,id_encontrado = 0;
+    int op;
+
+    if(huespedes != NULL){
+        do{
+            fseek(huespedes, 0, SEEK_END); // Ir al final del archivo
+            if (ftell(huespedes) == 0) { // Si el archivo está vacío
+                printf("\nNo hay huespedes para modificar.\n"); //Si no hay huespedes para modificar se vuelve al menu anterior
+                fclose(huespedes);
+                fclose(temp);
+                remove("tempHuespedes");
+                return;
+            }
+            fseek(huespedes, 0, SEEK_SET);
+
+            MostrarHuesped();
+            printf("\nIngrese el ID del huesped que quiera modificar: ");
+            fflush(stdin); scanf("%d",&id);
+            id_encontrado = VerificarID(&id);
+            if (!id_encontrado){
+                printf("\nID no encontrado, intente nuevamente\n");
+                }
+        }while (!id_encontrado);
+
+         while (fread(&huesped, sizeof(THuesped), 1, huespedes)) {
+            if (id == huesped.id) {
+                printf("\nHuesped encontrado:");
+                printf("\nID: %d\nNombre: %s\nDireccion: %s\nTelefono: %s\n", huesped.id, huesped.nombre, huesped.direccion, huesped.telefono);
+
+                printf("\nSeleccione que desea modificar:");
+                printf("\n1) Direccion");
+                printf("\n2) Telefono\n");
+                printf("0) Volver\n");
+                printf("\nIngrese una opcion: ");
+                fflush(stdin);
+                scanf("%d", &op);
+                system("cls");
+
+                switch(op){
+                    case 1:{
+                            //Modifcar direccion del huesped
+                            printf("\nIngrese la nueva direccion: ");
+                            fflush(stdin); gets(huesped.direccion);
+                            printf("\nHuesped modificado correctamente\n");
+                        }break;
+                    case 2:{
+                            //Modificar telefono del huesped
+                            printf("\nIngrese el nuevo telefono: ");
+                            fflush(stdin); gets(huesped.telefono);
+                            printf("\nHuesped modificado correctamente\n");
+                        }break;
+                    case 0:
+                        break;
+                    default:
+                        printf("\nOpcion no valida\n");
+                        break;
+                }
+            }
+            fwrite(&huesped, sizeof(THuesped), 1, temp);
+        }
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+    fclose(huespedes);
+    fclose(temp);
+    remove("Huespedes.dat");
+    rename("tempHuesped","Huespedes.dat");
+}
+
+//Menu para gestionar a los huespedes
+void GestionarHuesped(){
+    THuesped huesped[MAX_REGISTROS];
+    int tam = 0;
+    int op;
+    char op2;
+    do{
+        printf("\n--------------------------------------\n");
+        printf("|         Gestion de Huespedes       |");
+        printf("\n--------------------------------------\n");
+        printf("\n 1) Cargar nuevo Huesped\n\n 2) Eliminar Huesped segun ID\n\n 3) Mostrar Huespedes\n\n 4) Modificar Huesped\n\n 0) Volver al menu principal\n");
+        printf("\n Ingrese una opcion: ");
+        fflush(stdin); scanf("%d",&op);
+        system("cls");
+        switch(op){
+            case 1:
+                do{
+                    CargarHuesped(huesped,&tam);
+                    printf("\nDesea cargar otro huesped? 'N' para salir, 'S' para seguir: ");
+                    fflush(stdin); scanf("%c",&op2);
+                    op2 = toupper(op2);
+                    system("cls");
+                }while(op2 != 'N' && tam <= MAX_REGISTROS);
+                break;
+            case 2: EliminarHuesped();
+                break;
+            case 3: MostrarHuesped();
+                break;
+            case 4: ModificarHuesped();
+                break;
+            case 0:
+                break;
+            default: printf("\nIngrese una opcion valida\n");
+                break;
+        }
+    }while(op != 0);
+}
+
+//Funcion para crear una nueva habitacion
+THabitacion NuevaHabitacion(){
+    MostrarHabitacion();
+    printf("\n------------ Cargando Nueva Habitacion -----------\n");
+    THabitacion habitacion;
+
+    int num_existe,i;
+
+    do {
+        printf("\nIngrese el numero de habitacion: ");
+        fflush(stdin); scanf("%d", &habitacion.numero);
+        num_existe = VerificarNumHabitacion(&habitacion.numero); //Se llama a la funcion VerificarNumHabitacion() para que no se repitan los numeros de habitacion
+        if (num_existe){
+            printf("\nEl numero de habitacion ingresado ya existe. Ingrese otro numero.\n");
+        }else if(habitacion.numero <= 0){
+            printf("\nEl Numero de habitacion no puede ser 0 (cero) o menor. Intente nuevamente\n");
+        }
+
+    }while (num_existe || habitacion.numero <= 0);
+
+    do{
+        printf("\nIngrese el tipo de habitacion ('Simple' 'Doble' o 'Suite'): ");
+        fflush(stdin); gets(habitacion.tipo);
+        for(i = 0; habitacion.tipo[i] != '\0'; i++){
+            habitacion.tipo[i] = toupper(habitacion.tipo[i]);
+        }
+    }while(strcmp(habitacion.tipo,"SIMPLE") != 0 && strcmp(habitacion.tipo,"DOBLE") != 0 && strcmp(habitacion.tipo,"SUITE") != 0);
+
+
+    do{
+        printf("\nIngrese el precio por noche (Minimo = 100): ");
+        fflush(stdin); scanf("%f",&habitacion.precio);
+        if(habitacion.precio < 100){                     //Se establece un precio minimo de 100 por noche
+            printf("\nIngrese un precio valido\n");
+        }
+    }while(habitacion.precio < 100);
+
+    habitacion.estado = 0; //Se supone que al crear un nuevo registro de habitacion, la misma estara disponible
+    return habitacion;
+}
+
+//Funcion para verificar que no se repita los numeros de las habitaciones
+int VerificarNumHabitacion(int *num){
+    FILE *habitaciones = fopen("Habitaciones.dat", "rb");
+    THabitacion habitacion;
+    int num_existe = 0;
+    if (habitaciones != NULL) {
+        while (fread(&habitacion, sizeof(THabitacion), 1, habitaciones)) {
+            if (*num == habitacion.numero) {
+                num_existe = 1;
+                break;
+            }
+        }
+        fclose(habitaciones);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Habitaciones', intente nuevamente\n");
+    }
+    fclose(habitaciones);
+    return num_existe;
+}
+
+//Proceso para cargar una nueva habitacion al archivo "Habitaciones.dat"
+void CargarHabitacion(THabitacion habitacion[],int *tam2){
+    FILE *habitaciones = fopen("Habitaciones.dat","ab");
+    if(habitaciones != NULL){
+        habitacion[*tam2] = NuevaHabitacion();
+        fwrite(&habitacion[*tam2],sizeof(THabitacion), 1, habitaciones);
+        (*tam2)++;
+        printf("\nHabitacion cargado correctamente\n");
+        fclose(habitaciones);
+    }else{
+        printf("\nError al abrir el archivo 'Habitaciones', intente nuevamente\n");
+    }
+    fclose(habitaciones);
+}
+
+//Proceso para eliminar una habitacion segun su numero
+void EliminarHabitacion(){
+    FILE *habitaciones = fopen("Habitaciones.dat","rb");
+    FILE *temp = fopen("tempHabitaciones","wb");
+    THabitacion habitacion;
+
+    int estado;
+    int num,num_encontrado = 0;
+    char op;
+
+    if(habitaciones != NULL){
+        do{
+            fseek(habitaciones, 0, SEEK_END); // Ir al final del archivo
+            if (ftell(habitaciones) == 0) { // Si el archivo está vacío
+                printf("\nNo hay habitaciones para eliminar.\n"); //Si no hay habitaciones para eliminar se vuelve al menu anterior
+                fclose(habitaciones);
+                fclose(temp);
+                remove("tempHabitaciones");
+                return;
+            }
+            fseek(habitaciones, 0, SEEK_SET);
+
+            MostrarHabitacion();
+
+            printf("\nIngrese el numero de habitacion que quiere eliminar: ");
+            fflush(stdin); scanf("%d",&num);
+            num_encontrado = VerificarNumHabitacion(&num);
+            estado = VerificarEstado(&num);
+            if (!num_encontrado){
+                printf("\nNumero no encontrado, intente nuevamente\n");
+            }else if(!estado){
+                printf("\nNo se puede eliminar una habitacion ocupada, si desea hacerlo primero cancele la reserva\n");
+                fclose(habitaciones);
+                fclose(temp);
+                remove("tempHabitaciones");
+                return;
+            }
+        }while (!num_encontrado || !estado);
+
+        printf("\nSeguro que quiere eliminar la habitacion numero %d? 'S' para confirmar 'N' para salir\n", num);
+        printf("\nIngrese una opcion: ");
+        fflush(stdin); scanf(" %c", &op);
+        op = toupper(op);
+        if(op != 'S'){
+            fclose(habitaciones);
+            fclose(temp);
+            remove("tempHabitaciones");
+            return;
+        }
+
+        while(fread(&habitacion, sizeof(THabitacion), 1, habitaciones)){
+            if(num != habitacion.numero){
+                fwrite(&habitacion, sizeof(THabitacion), 1, temp);
+            }
+        }
+        system("cls");
+        printf("\nHabitacion eliminada correctamente\n");
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+    fclose(habitaciones);
+    fclose(temp);
+    remove("Habitaciones.dat");
+    rename("tempHabitaciones","Habitaciones.dat");
+}
+
+//Proceso para listar todas las habitaciones
+void MostrarHabitacion(){
+    FILE *habitaciones = fopen("Habitaciones.dat","rb");
+    THabitacion habitacion;
+    if(habitaciones != NULL){
+        printf("\n\n----------------- Habitaciones -------------------\n");
+        printf("\n Numero | Tipo    | Precio por noche | Estado    |\n");
+        printf("--------------------------------------------------\n");
+        while(fread(&habitacion,sizeof(THabitacion), 1, habitaciones)){
+            printf(" %-6d | %-7s | %-16.2f | %-9s |\n",habitacion.numero, habitacion.tipo, habitacion.precio, habitacion.estado == 1? "Ocupado" : "Descupado");
+        }
+        fclose(habitaciones);
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+    fclose(habitaciones);
+}
+
+//Proceso para modificar una habitacion segun su numero
+void ModificarHabitacion(){
+    FILE *habitaciones = fopen("Habitaciones.dat","rb");
+    FILE *temp = fopen("tempHabitaciones","wb");
+    THabitacion habitacion;
+
+    int num,num_encontrado = 0;
+    int op,i;
+    float nuevo_precio;
+
+    if(habitaciones != NULL){
+        do{
+            fseek(habitaciones, 0, SEEK_END); // Ir al final del archivo
+            if (ftell(habitaciones) == 0) { // Si el archivo está vacío
+                printf("\nNo hay habitaciones para modificar.\n"); //Si no hay habitaciones para modificar se vuelver al menu anteriior
+                fclose(habitaciones);
+                fclose(temp);
+                remove("tempHabitaciones");
+                return;
+            }
+            fseek(habitaciones, 0, SEEK_SET);
+
+            MostrarHabitacion();
+            printf("\nIngrese el numero de habitacion que quiera modificar: ");
+            fflush(stdin); scanf("%d",&num);
+            num_encontrado = VerificarNumHabitacion(&num);
+            if (!num_encontrado){
+                printf("\nNumero de habitacion no encontrado, intente nuevamente\n");
+                }
+        }while (!num_encontrado);
+
+         while (fread(&habitacion, sizeof(THabitacion), 1, habitaciones)) {
+            if (num == habitacion.numero) {
+                printf("\nHabitacion encontrada:");
+                printf("\nNumero: %d\nTipo: %s\nPrecio: %.2f\n",habitacion.numero, habitacion.tipo, habitacion.precio);
+
+                printf("\nSeleccione que desea modificar\n");
+                printf("\n1) Tipo\n");
+                printf("\n2) Precio\n");
+                printf("\n0) Volver\n");
+                printf("\nIngrese una opcion: ");
+                fflush(stdin);
+                scanf("%d", &op);
+                system("cls");
+
+                switch(op){
+                    case 1:{
+                            //Se actualiza el nuevo tipo de la habitacion
+                            do{
+                                printf("\nIngrese el nuevo tipo de habitacion ('Simple' 'Doble' o 'Suite'): ");
+                                fflush(stdin); gets(habitacion.tipo);
+                                for(i = 0; habitacion.tipo[i] != '\0'; i++){
+                                    habitacion.tipo[i] = toupper(habitacion.tipo[i]);
+                                }
+                            }while(strcmp(habitacion.tipo,"SIMPLE") != 0 && strcmp(habitacion.tipo,"DOBLE") != 0 && strcmp(habitacion.tipo,"SUITE") != 0);
+                                printf("\nHabitacion modificada correctamente\n");
+                        }break;
+                    case 2:{
+                            //Se actualiza el precio por noche de la habitacion, y si la misma esta reservada se actualiza en el archivo de "Reservas.dat" tambien
+                            printf("\nIngrese el nuevo precio por noche de la habitacion: ");
+                            fflush(stdin); scanf("%f", &nuevo_precio);
+                            habitacion.precio = nuevo_precio;
+                            if (!VerificarEstado(&num)){
+                                ActualizarPrecioReservas(&num, &nuevo_precio); //Aqui se actualiza el precio por noche y el total en el archivo "Reservas.dat"
+                            }
+                            printf("\nHabitacion modificada correctamente\n");
+                        }break;
+                    case 0:
+                        break;
+                    default:
+                        printf("\nOpcion no valida\n");
+                        break;
+                }
+            }
+            fwrite(&habitacion, sizeof(THabitacion), 1, temp);
+        }
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+    fclose(habitaciones);
+    fclose(temp);
+    remove("Habitaciones.dat");
+    rename("tempHabitaciones","Habitaciones.dat");
+}
+
+//Proceso para actualizar el estado de una habitacion (ocupado o desocupado)
+void ActualizarEstadoHabitacion(int num, int estado) {
+    FILE *habitaciones = fopen("Habitaciones.dat", "rb+");
+    THabitacion habitacion;
+    if (habitaciones != NULL) {
+        while (fread(&habitacion, sizeof(THabitacion), 1, habitaciones)) {
+            if (habitacion.numero == num) {
+                habitacion.estado = estado;
+                fseek(habitaciones, -sizeof(THabitacion), SEEK_CUR);
+                fwrite(&habitacion, sizeof(THabitacion), 1, habitaciones);
+                fclose(habitaciones);
+                break;
+            }
+        }
+        fclose(habitaciones);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Habitaciones', intente nuevamente\n");
+    }
+    fclose(habitaciones);
+}
+
+//Proceso para actualizar el precio por noche y total de una reserva si se modifica el precio de la habitacion en ModificarHabitacion()
+void ActualizarPrecioReservas(int *num_habitacion, float *nuevo_precio) {
+    FILE *reservas = fopen("Reservas.dat", "rb+");
+    TReserva reserva;
+
+    if (reservas != NULL) {
+        while (fread(&reserva, sizeof(TReserva), 1, reservas)) {
+            if (*num_habitacion == reserva.num_habitacion) {
+                reserva.precio_por_noche = *nuevo_precio;
+                reserva.precio_total = reserva.precio_por_noche * reserva.cantidad_noches;
+
+                fseek(reservas, -sizeof(TReserva), SEEK_CUR);
+                fwrite(&reserva, sizeof(TReserva), 1, reservas);
+                fclose(reservas);
+                return;
+            }
+        }
+        fclose(reservas);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Reservas', intente nuevamente\n");
+    }
+    fclose(reservas);
+}
+
+//Menu para gestionar las habitaciones
+void GestionarHabitaciones(){
+    THuesped habitacion[MAX_REGISTROS];
+    int tam2 = 0;
+    int op;
+    char op2;
+    do{
+        printf("\n--------------------------------------\n");
+        printf("|       Gestion de Habitaciones      |");
+        printf("\n--------------------------------------\n");
+        printf("\n 1) Cargar nueva Habitacion\n\n 2) Eliminar habitacion segun su numero\n\n 3) Mostrar habitaciones\n\n 4) Modificar habitacion\n\n 0) Volver al menu principal\n\n");
+        printf("\n Ingrese una opcion: ");
+        fflush(stdin); scanf("%d",&op);
+        system("cls");
+        switch(op){
+            case 1:
+                do{
+                    CargarHabitacion(habitacion,&tam2);
+                    printf("\nDesea cargar otra habitacion? 'N' para salir, 'S' para seguir: ");
+                    fflush(stdin); scanf("%c",&op2);
+                    op2 = toupper(op2);
+                    system("cls");
+                }while(op2 != 'N' && tam2 <= MAX_REGISTROS);
+                break;
+            case 2: EliminarHabitacion();
+                break;
+            case 3: MostrarHabitacion();
+                break;
+            case 4: ModificarHabitacion();
+                break;
+            case 0:
+                break;
+            default: printf("\nIngrese una opcion valida\n");
+                break;
+        }
+    }while(op != 0);
+}
+
+//Funcion para crear una nueva reserva
+TReserva NuevaReserva(){
+
+    TReserva reserva;
+    MostrarReservas();
+    MostrarHabitacionesDisponibles();
+    MostrarHuesped();
+
+    int id_reserva,id_existe,num_habitacion;
+    char *nombre_huesped;
+
+    if(VerificarHabitacionesOcupadas()){
+        printf("\nTodas las habitaciones estan ocupadas\n");
+        reserva.id_reserva = 0;
+        return reserva;
+    }
+
+    printf("\n\n------------ Cargando Nueva Reserva -----------\n");
+    do{
+        printf("\nIngrese el ID de la reserva: ");
+        fflush(stdin); scanf("%d", &reserva.id_reserva);
+        id_reserva = VerificarIDReserva(&reserva.id_reserva); //Se llama a la funcion VerificarIDReserva() para que no se repitan los ID ingresados
+        if (id_reserva){
+            printf("\nEl ID de reserva ingresado ya existe. Ingrese otro ID.\n");
+        }else if(reserva.id_reserva <= 0){
+            printf("\nEl ID de reserva no puede ser 0 (cero) o menor. Intente nuevamente\n");
+        }
+    }while (id_reserva || reserva.id_reserva <= 0);
+
+    FILE *huespedes = fopen("Huespedes.dat", "rb");
+
+    fseek(huespedes, 0, SEEK_END); // Ir al final del archivo
+    if (ftell(huespedes) == 0) { // Si el archivo está vacío
+        printf("\nNo hay huespedes para hacer la reserva, por favor cargue primero un huesped.\n");//Si no existen huespedes se pide primero cargar uno para poder hacer al menos una reserva
+        fclose(huespedes);
+        reserva.id_reserva = 0;
+        return reserva;
+    }
+    fseek(huespedes, 0, SEEK_SET);
+
+
+    do {
+        printf("\nIngrese el ID del huesped: ");
+        scanf("%d", &reserva.);
+        id_existe = VerificarID(&reserva.id_cliente);
+        if (!id_existe){
+            printf("\nID no encontrado. Ingrese otro ID.\n");
+        }
+
+        nombre_huesped = ObtenerNombreHuesped(&reserva.id_cliente);
+        if (nombre_huesped != NULL) {
+                strcpy(reserva.nombre_reserva, nombre_huesped);  //Se guarda el nombre del huepsed
+        }
+        reserva.dni_cliente = ObtenerDNI(&reserva.id_cliente); //Se guarda el DNI del huesped
+
+    }while (!id_existe);
+
+    FILE *habitaciones = fopen("Habitaciones.dat", "rb");
+
+    fseek(habitaciones, 0, SEEK_END); // Ir al final del archivo
+    if (ftell(habitaciones) == 0) { // Si el archivo está vacío
+        printf("\nNo hay habitaciones para reservar, por favor cargue primero una habitacion.\n");//Si no existen habitaciones se pide primero cargar uno para poder hacer al menos una reserva
+        fclose(habitaciones);
+        reserva.id_reserva = 0;
+        return reserva;
+    }
+    fseek(habitaciones, 0, SEEK_SET);
+
+    do {
+        printf("\nIngrese el numero de habitacion: ");
+        scanf("%d", &reserva.num_habitacion);
+        num_habitacion = VerificarEstado(&reserva.num_habitacion);
+        if (!num_habitacion){
+            printf("\nEl numero de habitacion no existe o ya esta reservado. Ingrese otro numero.\n");
+        }
+        reserva.precio_por_noche = ObtenerPrecioPorNoche(&reserva.num_habitacion); //Se almacena el precio por noche de la habitacion
+
+    }while (!num_habitacion);
+
+    do{
+        printf("\nIngrese la cantidad de noches que se quedara el huesped: ");
+        fflush(stdin); scanf("%d",&reserva.cantidad_noches);
+        if(reserva.cantidad_noches <= 0){
+            printf("\nLa cantidad de noches no pueden ser menores o igual que cero. Intente nuevamente\n");
+        }
+    }while(reserva.cantidad_noches <= 0);
+
+    reserva.precio_total = reserva.precio_por_noche*reserva.cantidad_noches; //Se calcula el precio total de la reserva
+    reserva.estado = 1;
+    return reserva;
+}
+
+//Funcion para obtener el DNI de un huesped segun su ID
+int ObtenerDNI(int *id){
+    FILE *huespedes = fopen("Huespedes.dat", "rb");
+    THuesped huesped;
+    int dni_huesped = 0;
+
+    if (huespedes != NULL) {
+        while (fread(&huesped, sizeof(THuesped), 1, huespedes)) {
+            if (*id == huesped.id) {
+                dni_huesped = huesped.dni;
+                return dni_huesped;
+            }
+        }
+        fclose(huespedes);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Huespedes', intente nuevamente\n");
+    }
+    return dni_huesped;
+}
+
+//Funcion para verificar que no se repitan los ID de las reservas
+int VerificarIDReserva(int *id){
+    FILE *reservas = fopen("Reservas.dat", "rb");
+    TReserva reserva;
+    int id_existe = 0;
+    if (reservas != NULL) {
+        while (fread(&reserva, sizeof(TReserva), 1, reservas)) {
+            if (*id == reserva.id_reserva) {
+                id_existe = 1;
+                break;
+            }
+        }fclose(reservas);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Reservas', intente nuevamente\n");
+    }
+    return id_existe;
+}
+
+//Funcion para verificar si una habitacion esta ocupada
+int VerificarEstado(int *num){
+    FILE *habitaciones = fopen("Habitaciones.dat", "rb");
+    THabitacion habitacion;
+
+    int num_existe = 0;
+    if (habitaciones != NULL) {
+        while (fread(&habitacion, sizeof(THabitacion), 1, habitaciones)) {
+            if (*num == habitacion.numero && habitacion.estado == 0) {
+                num_existe = 1;
+                fclose(habitaciones);
+                break;
+            }
+        }
+        fclose(habitaciones);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Habitaciones', intente nuevamente\n");
+    }
+    fclose(habitaciones);
+    return num_existe;
+}
+
+//Funcion para obtener el precio por noche de una habitacion
+float ObtenerPrecioPorNoche(int *num_habitacion){
+    FILE *habitaciones = fopen("Habitaciones.dat", "rb");
+    THabitacion habitacion;
+    float precio_por_noche = 0;
+    if (habitaciones != NULL) {
+        while (fread(&habitacion, sizeof(THabitacion), 1, habitaciones)) {
+            if (*num_habitacion == habitacion.numero) {
+                precio_por_noche = habitacion.precio;
+                fclose(habitaciones);
+                break;
+            }
+        }
+        fclose(habitaciones);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Habitaciones', intente nuevamente\n");
+    }
+    return precio_por_noche;
+}
+
+//Funcion para verifiicar si todas las habitaciones estan ocupadas
+int VerificarHabitacionesOcupadas(){
+    FILE *habitaciones = fopen("Habitaciones.dat", "rb");
+    THabitacion habitacion;
+
+    if (habitaciones != NULL) {
+        while (fread(&habitacion, sizeof(THabitacion), 1, habitaciones)) {
+            if (habitacion.estado == 0){
+                fclose(habitaciones);
+                return 0;
+            }
+        }
+        fclose(habitaciones);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Habitaciones', intente nuevamente\n");
+    }
+    return 1;
+}
+
+//Proceso para cargar una reserva en el archivo "Reservas.dat"
+void CargarReserva(TReserva reserva[], int *tam3){
+    FILE *reservas = fopen("Reservas.dat", "ab");
+    if (reservas != NULL) {
+        reserva[*tam3] = NuevaReserva();
+        if (reserva[*tam3].id_reserva != 0){
+            fwrite(&reserva[*tam3], sizeof(TReserva), 1, reservas);
+            ActualizarEstadoHabitacion(reserva[*tam3].num_habitacion, 1);
+            (*tam3)++;
+            printf("\nReserva cargada correctamente\n");
+            fclose(reservas);
+        }else{
+            printf("\nError al cargar la reserva. Revise los mensajes anteriores.\n");
+        }
+    }else{
+        printf("\nError al abrir el archivo 'Reservas', intente nuevamente\n");
+    }
+    fclose(reservas);
+}
+
+//Proceso para listar todas las reservas
+void MostrarReservas(){
+    FILE *reservas = fopen("Reservas.dat","rb");
+    TReserva reserva;
+    if(reservas != NULL){
+        printf("\n\n----------------------------------------------------------- Reservas ---------------------------------------------------------------------\n");
+        printf("\n ID Reserva | Nro. habitacion | ID huesped |    DNI    | Nombre Huesped | Cantidad de noches | Precio por noche | Precio total | Estado  |\n");
+        printf("------------------------------------------------------------------------------------------------------------------------------------------");
+        while(fread(&reserva,sizeof(TReserva), 1, reservas)){
+            printf(" \n %-10d | %-15d | %-10d | %-9d | %-14s | %-18d | %-16.2f | %-12.2f | %-4s |",reserva.id_reserva, reserva.num_habitacion, reserva.id_cliente, reserva.dni_cliente, reserva.nombre_reserva, reserva.cantidad_noches,reserva.precio_por_noche, reserva.precio_total, reserva.estado == 1? "Ocupado" : "Descupado");
+        }
+        fclose(reservas);
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+}
+
+//Proceso para mostrar todas las habitaciones disponibles
+void MostrarHabitacionesDisponibles(){
+    FILE *habitaciones = fopen("Habitaciones.dat","rb");
+    THabitacion habitacion;
+    if(habitaciones != NULL){
+        printf("\n\n\n------------ Habitaciones Disponibles --------------\n");
+        printf("\n Numero | Tipo    | Precio por noche | Estado    |\n");
+        printf("--------------------------------------------------\n");
+        while(fread(&habitacion,sizeof(THabitacion), 1, habitaciones)){
+            if(habitacion.estado == 0){
+                printf(" %-6d | %-7s | %-16.2f | %-9s |\n",habitacion.numero, habitacion.tipo, habitacion.precio, habitacion.estado == 1? "Ocupado" : "Descupado");
+            }
+        }
+        fclose(habitaciones);
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+}
+
+//Proceso para mostrar todas las habitaciones ocupadas
+void MostrarHabitacionesOcupadas(){
+    FILE *habitaciones = fopen("Habitaciones.dat","rb");
+    THabitacion habitacion;
+    if(habitaciones != NULL){
+         printf("\n------------ Habitaciones Ocupadas --------------\n");
+        printf("\n Numero | Tipo    | Precio por noche | Estado    |\n");
+        printf("--------------------------------------------------\n");
+        while(fread(&habitacion,sizeof(THabitacion), 1, habitaciones)){
+            if(habitacion.estado == 1){
+                printf(" %-6d | %-7s | %-16.2f | %-9s |\n",habitacion.numero, habitacion.tipo, habitacion.precio, habitacion.estado == 1? "Ocupado" : "Descupado");
+            }
+        }
+        fclose(habitaciones);
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+}
+
+//Proceso para cancelar una reserva segun su ID
+void CancelarReserva(){
+    FILE *reservas = fopen("Reservas.dat","rb");
+    FILE *temp = fopen("tempReservas","wb");
+    TReserva reserva;
+
+    int num,num_encontrado = 0;
+    char op;
+
+    if(reservas != NULL){
+
+        fseek(reservas, 0, SEEK_END); // Ir al final del archivo
+        if (ftell(reservas) == 0) { // Si el archivo está vacío
+            printf("\nNo hay reservas para cancelar.\n");//Si no hay reservas para cancelar se vuelve al menu anterior
+            fclose(reservas);
+            fclose(temp);
+            remove("tempReservas");
+            return;
+        }
+        fseek(reservas, 0, SEEK_SET);
+
+        do{
+            MostrarReservas();
+
+            printf("\n\nIngrese el numero de reserva que desea cancelar: ");
+            fflush(stdin); scanf("%d",&num);
+            num_encontrado = VerificarIDReserva(&num);
+            if (!num_encontrado){
+                printf("\nNumero no encontrado, intente nuevamente\n");
+            }
+        }while (!num_encontrado);
+
+        printf("\nSeguro que quiere cancelar la reserva con ID %d? 'S' para confirmar 'N' para salir\n", num);
+        printf("\nIngrese una opcion: ");
+        fflush(stdin); scanf(" %c", &op);
+        op = toupper(op);
+        if(op != 'S'){
+            fclose(reservas);
+            fclose(temp);
+            remove("tempHabitaciones");
+            return;
+        }
+        system("cls");
+        while(fread(&reserva, sizeof(TReserva), 1, reservas)){
+            if(num != reserva.id_reserva){
+                fwrite(&reserva, sizeof(TReserva), 1, temp);
+            }else{
+                 ActualizarEstadoHabitacion(reserva.num_habitacion,0);
+            }
+        }
+        system("cls");
+        printf("\nReserva cancelada correctamente\n");
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+    fclose(reservas);
+    fclose(temp);
+    remove("Reservas.dat");
+    rename("tempReservas","Reservas.dat");
+}
+
+//Funcion para obtener el nombre del huesped segun su ID
+char* ObtenerNombreHuesped(int *id) {
+    FILE *huespedes = fopen("Huespedes.dat", "rb");
+    THuesped huesped;
+    static char nombreHuesped[100] = {'\0'};
+
+    if (huespedes != NULL) {
+        while (fread(&huesped, sizeof(THuesped), 1, huespedes)) {
+            if (*id == huesped.id) {
+                strcpy(nombreHuesped, huesped.nombre);
+                fclose(huespedes);
+                return nombreHuesped;
+            }
+        }
+        fclose(huespedes);
+    } else {
+        printf("\nNo se pudo abrir el archivo 'Huespedes', intente nuevamente\n");
+    }
+    return NULL;
+}
+
+//Proceso para modificar una reserva segun su ID
+void ModificarReserva(){
+
+    FILE *reservas = fopen("Reservas.dat","rb");
+    FILE *temp = fopen("tempReservas","wb");
+    TReserva reserva;
+
+    float precio_nuevo_por_noche;
+    int num_habitacion,nueva_habitacion;
+    int id_existe,id;
+    int op;
+
+    if(reservas != NULL){
+
+        fseek(reservas, 0, SEEK_END); // Ir al final del archivo
+        if (ftell(reservas) == 0) { // Si el archivo está vacío
+            printf("\nNo hay reservas para modificar.\n");//Si no hay reservas para modificar se vuelve al menu anterior
+            fclose(reservas);
+            fclose(temp);
+            remove("tempReservas");
+            return;
+        }
+        fseek(reservas, 0, SEEK_SET);
+
+        do{
+            MostrarReservas();
+            printf("\n\nIngrese el numero de reserva que quiera modificar: ");
+            fflush(stdin); scanf("%d",&id);
+            id_existe = VerificarIDReserva(&id);
+            if (!id_existe){
+                printf("\nNumero de reserva no encontrado, intente nuevamente\n");
+                fclose(reservas);
+                fclose(temp);
+                remove("tempReservas");
+                return;
+                }
+        }while(!id_existe);
+
+         while (fread(&reserva, sizeof(TReserva), 1, reservas)) {
+            if (id == reserva.id_reserva) {
+                printf("\nReserva encontrada:");
+                printf("\nID Reserva: %d\nNumero de habitacion: %d\nID de huesped: %d\nCantidad de noches: %d\nPrecio por noche: %.2f\nPrecio total: %.2f\nEstado: %s\n",reserva.id_reserva, reserva.num_habitacion, reserva.id_cliente, reserva.cantidad_noches,reserva.precio_por_noche, reserva.precio_total, reserva.estado == 1? "Ocupado" : "Descupado");
+
+                printf("\nSeleccione que desea modificar:");
+                printf("\n\n1) Numero de habitacion");
+                printf("\n\n2) Cantidad de noches");
+                printf("\n\n0) Volver");
+                printf("\n\nIngrese una opcion: ");
+                fflush(stdin);
+                scanf("%d", &op);
+                system("cls");
+                switch(op){
+                    case 1:{
+                            MostrarHabitacion();
+                            printf("\n\nIngrese el nuevo numero de habitacion: ");
+                            num_habitacion = reserva.num_habitacion; // Se guarda el numero de habitacion antes de modificarlo para luego actualizar su estado
+                            fflush(stdin); scanf("%d", &nueva_habitacion);
+
+                            if (VerificarEstado(&nueva_habitacion)){
+                                precio_nuevo_por_noche = ObtenerPrecioPorNoche(&num_habitacion); //Se obtiene el precio por noche de la nueva habitacion para calcular el precio total en la reserva
+                                reserva.num_habitacion = nueva_habitacion;
+
+                                ActualizarEstadoHabitacion(reserva.num_habitacion, 1); // Ocupar la nueva habitación
+                                ActualizarEstadoHabitacion(num_habitacion, 0); // Liberar la habitación anterior
+
+                                reserva.precio_por_noche = precio_nuevo_por_noche; //Se guarda el precio por noche obtenido por la funcion ObtenerPrecioPorNoche() en "Reservas.dat"
+                                reserva.precio_total = reserva.precio_por_noche * reserva.cantidad_noches; //Se actualiza el precio total en la reserva
+
+                            }else{
+                                printf("\nNumero de habitacion no valido o no disponible.\n");
+                                fclose(reservas);
+                                fclose(temp);
+                                remove("tempReservas");
+                                return;
+                            }
+                            printf("\nReserva modificada correctamente\n");
+                        }break;
+                    case 2:{
+                            MostrarReservas();
+                             do{
+                                 printf("\n\nIngrese la cantidad de noches que se quedara el huesped: ");
+                                 fflush(stdin); scanf("%d",&reserva.cantidad_noches);
+                                 if(reserva.cantidad_noches <= 0){
+                                    printf("\nLa cantidad de noches no pueden ser menores o igual que cero. Intente nuevamente\n");
+                                }
+                            }while(reserva.cantidad_noches <= 0);
+
+                            reserva.precio_total = (reserva.precio_por_noche * reserva.cantidad_noches); //Se actualiza el precio total segun la cantidad de noches ingresada
+                            printf("\nReserva modificada correctamente\n");
+                        }break;
+                    case 0:
+                        break;
+                    default:
+                        printf("\nOpcion no valida\n");
+                        break;
+                }
+            }
+            fwrite(&reserva, sizeof(TReserva), 1, temp);
+        }
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+    fclose(reservas);
+    fclose(temp);
+    remove("Reservas.dat");
+    rename("tempReservas","Reservas.dat");
+}
+
+//Procedimiento para buscar reserva segun el DNI de un huesped
+void BuscarReservaPorDNI(int *dni){
+    FILE *reservas = fopen("Reservas.dat","rb");
+    TReserva reserva;
+    if(reservas != NULL){
+
+        printf("\n\n----------------------------------------- Reservas ----------------------------------------------------\n\n");
+        printf("\n ID Reserva | Nro. habitacion | ID huesped |    DNI    | Nombre Huesped | Cantidad de noches | Precio por noche | Precio total | Estado  |\n");
+        printf("------------------------------------------------------------------------------------------------------------------------------------------");
+        while(fread(&reserva,sizeof(TReserva), 1, reservas)){
+            if(*dni == reserva.dni_cliente)
+            printf(" \n %-10d | %-15d | %-10d | %-9d | %-14s | %-18d | %-16.2f | %-12.2f | %-4s |",reserva.id_reserva, reserva.num_habitacion, reserva.id_cliente, reserva.dni_cliente, reserva.nombre_reserva, reserva.cantidad_noches,reserva.precio_por_noche, reserva.precio_total, reserva.estado == 1? "Ocupado" : "Descupado");
+        }
+        fclose(reservas);
+    }else{
+        printf("\nNo se pudo abrir el archivo, intente nuevamente\n");
+    }
+
+}
+
+//Menu para gestionar las reservas
+void GestionarReservas(){
+    TReserva reserva[MAX_REGISTROS];
+    int tam3 = 0;
+    int dni;
+    int op;
+    char op2;
+    do{
+        printf("\n\n--------------------------------------\n");
+        printf("|         Gestion de Reservas        |");
+        printf("\n--------------------------------------\n");
+        printf("\n 1) Cargar nueva reserva\n\n 2) Cancelar reserva segun su ID\n\n 3) Mostrar reservas\n\n 4) Modificar reservas\n\n 5) Mostrar habitaciones disponibles\n\n 6) Mostrar habitaciones ocupadas\n\n 7) Buscar reserva por DNI\n\n 0) Volver al menu principal\n");
+        printf("\n Ingrese una opcion: ");
+        fflush(stdin); scanf("%d",&op);
+        system("cls");
+        switch(op){
+            case 1:
+                do{
+                    CargarReserva(reserva,&tam3);
+                    printf("\nDesea cargar otra reserva? 'N' para salir, 'S' para seguir: ");
+                    fflush(stdin); scanf("%c",&op2);
+                    op2 = toupper(op2);
+                    system("cls");
+                }while(op2 != 'N' && tam3 <= MAX_REGISTROS);
+                break;
+            case 2: CancelarReserva();
+                break;
+            case 3: MostrarReservas();
+                break;
+            case 4: ModificarReserva();
+                break;
+            case 5: MostrarHabitacionesDisponibles();
+                break;
+            case 6: MostrarHabitacionesOcupadas();
+                break;
+            case 7:{
+                    do{
+                        printf("\nIngrese el DNI para buscar su reserva: ");
+                        fflush(stdin); scanf("%d",&dni);
+                        if(!VerificarDNI(&dni)){
+                            printf("\nEl DNI ingresado no esta asociado a ninguna reserva. Intente nuevamente\n");
+                            return;
+                        }else{
+                            BuscarReservaPorDNI(&dni);
+                        }
+                    }while(!VerificarDNI(&dni));
+                }break;
+            case 0:
+                break;
+            default: printf("\nIngrese una opcion valida\n");
+                break;
+        }
+    }while(op != 0);
+}
+
